@@ -10,7 +10,7 @@ module.exports = function QSToES (queryString) {
   
   let mas = queryString.split("&");
   let objParam = [];
-  let suf, ind, value, param;
+  let suf, ind, value, param,flag, group=[], flagGroup, maxIndex=0;
   let request={"query":{
     "bool":{
     }
@@ -18,37 +18,117 @@ module.exports = function QSToES (queryString) {
   mas.forEach(function (item) {
     value = item.split("=")[1];
     param = item.split("=")[0];
+    if(param!=="group") {
+        suf = param.substr(param.length - 3);
+        if (suf == "not" || suf == "gte" || suf == "lte") {
+            param = param.substr(0, param.length - 4);
+        }
+        else {
+            suf = undefined;
+        }
+        ind = param.split(/\[|\]/)[1];
+        if(ind>maxIndex) maxIndex=ind;
+        if (ind) {
+            param = param.substr(0, param.length - ind.length - 2)
+        }
 
-    suf = param.substr(param.length-3);
-    if(suf =="not"||suf=="gte"||suf=="lte"){
-    param = param.substr(0, param.length-4);
+        objParam.push({param, ind, suf, value});
+    } else{
+        group = value.split(",");
     }
-    else {
-      suf = undefined;
-    }
-    ind = param.split(/\[|\]/)[1];
-    if(ind){
-      param = param.substr(0, param.length - ind.length-2)
-    }
-
-    objParam.push({param, ind,suf,value});
-
   });
+
+  objParam.forEach(function (item) {
+      flagGroup=0;
+      for(let i=0; i<group.length; i++){
+          if(item.param==group[i]) flagGroup=1;
+      }
+      if(flagGroup){
+        switch (item.suf){
+            case undefined:
+                if (!("must" in request.query.bool)) {
+                    request.query.bool["must"] = [];
+                }
+                if (request.query.bool.must[item.ind] == undefined) {
+                    request.query.bool["must"][item.ind]={"bool":{"must":[]}};
+                }
+                request.query.bool.must[item.ind].bool.must.push({"term": {[item.param]: {"value": item.value}}});
+                break;
+
+            case "not":
+                if (!("must_not" in request.query.bool)) {
+                    request.query.bool["must_not"] = [];
+                }
+                if (request.query.bool.must_not[item.ind] == undefined) {
+                    request.query.bool["must_not"][item.ind]={"bool":{"must":[]}};
+                }
+                request.query.bool.must_not[item.ind].bool.must.push({"term": {[item.param]: {"value": item.value}}});
+                break;
+
+
+            default:
+        }
+      }
+  })
 
   objParam.forEach(function (item,i) {
-     switch (item.suf){
-         case undefined:
-          if(!("must" in request.query.bool)){
-            request.query.bool["must"]=[];
+      flagGroup=0;
+      for(let i=0; i<group.length; i++){
+        if(item.param==group[i]) flagGroup=1;
+    }
+      if(!flagGroup) {
+          switch (item.suf) {
+              case undefined:
+                  if (!("must" in request.query.bool)) {
+                      request.query.bool["must"] = [];
+                  }
+                  request.query.bool["must"].push({"term": {[item.param]: {"value": item.value}}});
+                  break;
+              case "not":
+                  if (!("must_not" in request.query.bool)) {
+                      request.query.bool["must_not"] = [];
+                  }
+                  request.query.bool["must_not"].push({"term": {[item.param]: {"value": item.value}}})
+                  break;
+              case "lte":
+                  if (!("must" in request.query.bool)) {
+                      request.query.bool["must"] = [];
+                  }
+                  flag = 0;
+                  request.query.bool.must.forEach(function (itemRange, i) {
+                      if(itemRange.range!==undefined) {
+                          if (item.param in itemRange.range) {
+                              request.query.bool["must"][i]["range"][item.param][item.suf] = item.value;
+                              flag = 1;
+                          }
+                      }
+                  });
+                  if (!flag) {
+                      request.query.bool["must"].push({"range": {[item.param]: {[item.suf]: item.value}}});
+                  }
+                  break;
+              case "gte":
+                  if (!("must" in request.query.bool)) {
+                      request.query.bool["must"] = [];
+                  }
+                  flag = 0;
+                  request.query.bool.must.forEach(function (itemRange, i) {
+                      if(itemRange.range!==undefined) {
+                          if (item.param in itemRange.range) {
+                              request.query.bool["must"][i]["range"][item.param][item.suf] = item.value;
+                              flag = 1;
+                          }
+                      }
+                  });
+                  if (!flag) {
+                      request.query.bool["must"].push({"range": {[item.param]: {[item.suf]: item.value}}});
+                  }
+                  break;
+              default:
           }
-           request.query.bool["must"].push({"term":{item}});
-           break;
-         default:
-               console.log(2222);
-     }
-
-
+      }
   });
-
-  return request.query.bool;
+    //console.log(queryString);
+    //console.log(group);
+  return request;
 };

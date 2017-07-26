@@ -2,7 +2,7 @@
 
 const QStoES = require('../index'),
     expect = require("chai").expect;
-/*
+
 
 describe('Обычные запросы', function () {
   it('brand.id=9&model.id=98', function () {
@@ -197,7 +197,7 @@ describe('Запросы с группами и исключениями', funct
         });
   });
 });
-*/
 
 
-console.log(QStoES('brand.id.not=9&model.id[23]=98&model.id=98&model.id[2].gte=98&model.id=982'));
+//console.log(QStoES('brand.id[0]=10&model.id[0]=113&price.id.lte=222&price.id.gte=10000&year=2016&group=brand.id,model.id'));
+//console.log(QStoES('brand.id[0]=10&model.id[0]=113&brand.id[1]=1&model.id[1]=1&group=brand.id,model.id'))
