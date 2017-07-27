@@ -199,5 +199,5 @@ describe('Запросы с группами и исключениями', funct
 });
 
 
-//console.log(QStoES('brand.id[0].not=9&model.id[0].not=98&brand.id[1]=10&model.id[1]=113&group=brand.id,model.id'));
+//console.log(QStoES('price[0].gte=5000&price[0].lte=7500&price[1].gte=15000&price[1].lte=20000'));
 //console.log(QStoES('brand.id[0]=10&model.id[0]=113&brand.id[1]=1&model.id[1]=1&group=brand.id,model.id'))
