@@ -15,10 +15,13 @@ module.exports = function QSToES (queryString) {
     "bool":{
     }
   }};
+  /*Визначення всіх параметрів*/
   mas.forEach(function (item) {
-    value = item.split("=")[1];
-    param = item.split("=")[0];
+    value = item.split("=")[1]; //Значення
+    param = item.split("=")[0]; //Параметр
     if(param!=="group") {
+
+        /*Суфікс*/
         suf = param.substr(param.length - 3);
         if (suf == "not" || suf == "gte" || suf == "lte") {
             param = param.substr(0, param.length - 4);
@@ -26,19 +29,21 @@ module.exports = function QSToES (queryString) {
         else {
             suf = undefined;
         }
+
+        /*Індекс*/
         ind = param.split(/\[|\]/)[1];
         if(ind>maxIndex) maxIndex=ind;
         if (ind) {
             param = param.substr(0, param.length - ind.length - 2)
         }
-
-        objParam.push({param, ind, suf, value});
+        objParam.push({param, ind, suf, value});  //масив об'єктів з параметрами
     } else{
-        group = value.split(",");
+        group = value.split(","); //помічаєм групові параметри
     }
   });
 
   objParam.forEach(function (item) {
+      console.log(JSON.stringify(item)+ "-----")
       flagGroup=0;
       for(let i=0; i<group.length; i++){
           if(item.param==group[i]) flagGroup=1;
@@ -46,9 +51,11 @@ module.exports = function QSToES (queryString) {
       if(flagGroup){
         switch (item.suf){
             case undefined:
+                console.log("must")
                 if (!("must" in request.query.bool)) {
                     request.query.bool["must"] = [];
                 }
+                if(item.ind==undefined) item.ind=0;
                 if (request.query.bool.must[item.ind] == undefined) {
                     request.query.bool["must"][item.ind]={"bool":{"must":[]}};
                 }
@@ -56,9 +63,11 @@ module.exports = function QSToES (queryString) {
                 break;
 
             case "not":
+                console.log("must_not")
                 if (!("must_not" in request.query.bool)) {
                     request.query.bool["must_not"] = [];
                 }
+                if(item.ind==undefined) item.ind=0;
                 if (request.query.bool.must_not[item.ind] == undefined) {
                     request.query.bool["must_not"][item.ind]={"bool":{"must":[]}};
                 }
@@ -71,7 +80,8 @@ module.exports = function QSToES (queryString) {
       }
   })
 
-  objParam.forEach(function (item,i) {
+
+  objParam.forEach(function (item) {
       flagGroup=0;
       for(let i=0; i<group.length; i++){
         if(item.param==group[i]) flagGroup=1;
@@ -128,7 +138,19 @@ module.exports = function QSToES (queryString) {
           }
       }
   });
-    //console.log(queryString);
-    //console.log(group);
+
+  /*Чистка масива від елементів undefined*/
+    if("must" in request.query.bool){
+        for(let i=0;i<request.query.bool.must.length;i++){
+            if(request.query.bool.must[i]==undefined) {request.query.bool.must.splice(i,1)}
+        }
+
+    }
+    if("must_not" in request.query.bool){
+        for(let i=0;i<request.query.bool.must.length;i++){
+            if(request.query.bool.must[i]==undefined) {request.query.bool.must.splice(i,1)}
+        }
+
+    }
   return request;
 };
