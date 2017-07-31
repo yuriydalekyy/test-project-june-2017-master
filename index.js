@@ -43,7 +43,6 @@ module.exports = function QSToES(queryString) {
     });
 
     objParam.forEach(function (item) {
-        console.log(JSON.stringify(item) + "-----")
         flagGroup = 0;
         for (let i = 0; i < group.length; i++) {
             if (item.param == group[i]) flagGroup = 1;
@@ -51,7 +50,7 @@ module.exports = function QSToES(queryString) {
         if (flagGroup) {
             switch (item.suf) {
                 case undefined:
-                    console.log("must")
+
                     if (!("must" in request.query.bool)) {
                         request.query.bool["must"] = [];
                     }
@@ -63,7 +62,7 @@ module.exports = function QSToES(queryString) {
                     break;
 
                 case "not":
-                    console.log("must_not")
+
                     if (!("must_not" in request.query.bool)) {
                         request.query.bool["must_not"] = [];
                     }
@@ -105,22 +104,21 @@ module.exports = function QSToES(queryString) {
                 case "lte":
                     if (!("must" in request.query.bool)) {
                         request.query.bool["must"] = [];
-                        console.log(111)
+
                     }
                     flag = 0;
                     request.query.bool.must.forEach(function (itemRange, i) {
                         if (itemRange.range !== undefined) {
-                            console.log(item.ind + " перший")
-                            console.log(itemRange.range.ind + " другий")
+
                             if ((item.param in itemRange.range) && (item.ind == itemRange.range.ind)) {
-                                console.log(3333)
+
                                 request.query.bool["must"][i]["range"][item.param][item.suf] = item.value;
                                 flag = 1;
                             }
                         }
                     });
                     if (!flag) {
-                        console.log(44444)
+
                         request.query.bool["must"].push({
                             "range": {
                                 "ind": item.ind,
