@@ -42,6 +42,7 @@ module.exports = function QSToES(queryString) {
         }
     });
 
+    /*Формування запита для групових параметрів*/
     objParam.forEach(function (item) {
         flagGroup = 0;
         for (let i = 0; i < group.length; i++) {
@@ -49,8 +50,7 @@ module.exports = function QSToES(queryString) {
         }
         if (flagGroup) {
             switch (item.suf) {
-                case undefined:
-
+                case undefined: //Для параметрів без індекса
                     if (!("must" in request.query.bool)) {
                         request.query.bool["must"] = [];
                     }
@@ -61,8 +61,7 @@ module.exports = function QSToES(queryString) {
                     request.query.bool.must[item.ind].bool.must.push({"term": {[item.param]: {"value": item.value}}});
                     break;
 
-                case "not":
-
+                case "not": //Для параметрів з індексом not
                     if (!("must_not" in request.query.bool)) {
                         request.query.bool["must_not"] = [];
                     }
@@ -79,7 +78,7 @@ module.exports = function QSToES(queryString) {
         }
     });
 
-
+    /*Формування запита для не групових параметрів*/
     objParam.forEach(function (item) {
         flagGroup = 0;
         for (let i = 0; i < group.length; i++) {
@@ -87,21 +86,21 @@ module.exports = function QSToES(queryString) {
         }
         if (!flagGroup) {
             switch (item.suf) {
-                case undefined:
+                case undefined: //Для параметрів без індекса
                     if (!("must" in request.query.bool)) {
                         request.query.bool["must"] = [];
                     }
                     request.query.bool["must"].push({"term": {[item.param]: {"value": item.value}}});
                     break;
 
-                case "not":
+                case "not": //Для параметрів з індексом not
                     if (!("must_not" in request.query.bool)) {
                         request.query.bool["must_not"] = [];
                     }
                     request.query.bool["must_not"].push({"term": {[item.param]: {"value": item.value}}})
                     break;
 
-                case "lte":
+                case "lte": //Для параметрів з індексом lte
                     if (!("must" in request.query.bool)) {
                         request.query.bool["must"] = [];
 
@@ -109,7 +108,7 @@ module.exports = function QSToES(queryString) {
                     flag = 0;
                     request.query.bool.must.forEach(function (itemRange, i) {
                         if (itemRange.range !== undefined) {
-
+                            /*Перевірка чи існує параметр з таким же індексом але іншим суфіксом*/
                             if ((item.param in itemRange.range) && (item.ind == itemRange.range.ind)) {
 
                                 request.query.bool["must"][i]["range"][item.param][item.suf] = item.value;
@@ -128,13 +127,14 @@ module.exports = function QSToES(queryString) {
                     }
                     break;
 
-                case "gte":
+                case "gte": //Для параметрів з індексом gte
                     if (!("must" in request.query.bool)) {
                         request.query.bool["must"] = [];
                     }
                     flag = 0;
                     request.query.bool.must.forEach(function (itemRange, i) {
                         if (itemRange.range !== undefined) {
+                            /*Перевірка чи існує параметр з таким же індексом але іншим суфіксом*/
                             if ((item.param in itemRange.range) && (item.ind == itemRange.range.ind)) {
                                 request.query.bool["must"][i]["range"][item.param][item.suf] = item.value;
                                 flag = 1;
